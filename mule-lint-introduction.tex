@@ -1,0 +1,171 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Contract
+% LaTeX Template
+% Version 1.0 (December 8 2014)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% Original author:
+% Brandon Fryslie
+% With extensive modifications by:
+% Vel (vel@latextemplates.com)
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+% Note:
+% If you are using Apple OS X, go into structure.tex and uncomment the font
+% specifications for OS X and comment out the default specifications - this will
+% drastically increase how good the document looks. You will now need to
+% compile with XeLaTeX.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[a4paper,12pt]{article} % The default font size is 12pt on A4 paper, change to 'usletter' for US Letter paper and adjust margins in structure.tex
+
+\usepackage{fancyvrb}
+
+
+\input{structure.tex} % Input the structure.tex file which specifies the document layout and style
+
+%----------------------------------------------------------------------------------------
+%	DYNAMIC CONTRACT INFORMATION
+%----------------------------------------------------------------------------------------
+
+% Your name and company name
+\newcommand{\YourName}{Chad Gorshing}
+\newcommand{\CompanyName}{Nuisto}
+
+% Your address
+\newcommand{\AddressLineOne}{PO Box 1509}
+\newcommand{\AddressLineTwo}{}
+
+% Your email address
+\newcommand{\YourEmail}{chad@nuisto.com}
+
+% The client's name
+\newcommand{\ClientName}{MuleSoft}
+
+% The delivery date for specifications and completion date for the project
+\newcommand{\DeliveryDate}{2017-11-01}
+\newcommand{\CompletionDate}{2017-11-01}
+
+% The hourly rate
+\newcommand{\HourlyRate}{\$165}
+
+% Payee's information
+\newcommand{\PayeeName}{[Payee Name]}
+\newcommand{\PaymentAddressLineOne}{[Adress]}
+\newcommand{\PaymentAddressLineTwo}{[Adress]}
+\newcommand{\PaymentAddressLineThree}{[Adress]}
+
+%----------------------------------------------------------------------------------------
+
+\begin{document}
+
+
+%----------------------------------------------------------------------------------------
+%	OBJECTIVE SECTION
+%----------------------------------------------------------------------------------------
+
+\section{Static Checking for Mule Best Practices}
+
+The mule-lint application is an open source project to provide basic static analysis checking of certain elements of a Mule Integration Application. This is a growing concern and a project has been spun up to help fill this gap. This open source project was started by Chad Gorshing, an Independent MuleSoft Certified Consultant (not an employee of MuleSoft, but has partnered on multiple occasions), and features are still being developed.
+
+There are "rules" that need to be checked that have specific use cases and a predefined rules can not be already created. So as a guide, here are a few things to keep in mind on what could fit for your business use cases.
+
+Many "rules" are still subjective and we continually are learning what rules can easily work and be a good foundation for others to follow.
+
+Currently this project will not cause a build failure, but only provide information for others to act upon. Teams will need to decide for themselves what constitutes a failure for their cases. Just because a rule is "broken" once does not necessarily warrant a build or deployment failure. We feel that this is up the team to decide what level is good for them to proceed (if any at all).
+
+%----------------------------------------------------------------------------------------
+%	DELIVERABLES SECTION
+%----------------------------------------------------------------------------------------
+
+\section{Naming Conventions}
+
+We find naming convention opinions vary greatly from developer to developer and as this does not have any functional or operational impact, this is not yet checked for consistency. This feature is on the roadmap, but other items with a larger impact (again functional and operational) have higher priority of development time.
+
+\section{Logging}
+
+In integration applications, logging is of paramount to ensure operational visibility and tracing of events. Tracking timings is also commonly important; tracking how well an outside web request or database transaction is taking is a great piece of information to have. Along with log aggregators (Splunk ..etc) it provides a key piece of information to the health of the system.
+
+A basis for this is to make sure a well defined category is specified and followed. Experience has shown that a team of developers each choose different categories for each logger and selectively defining a logger level begins to be a bit more difficult. Having well defined logger name allows for more selective logging adjusting during runtime. To ensure the team is using a defined list can be checked with:
+
+\begin{Verbatim}[fontsize=\small]
+element 'logger' hasAttribute 'category', ['com.acme.int.polling', 'com.acme.int.db']
+\end{Verbatim}
+
+The following is an example of a file that did not follow this rule:
+
+\begin{Verbatim}[fontsize=\small]
+"file": "/path/to/file/acme/mule-project/src/main/app/muleFlow.xml",
+"messages": [
+    {
+        "message": "Element logger does not contain the attribute category",
+        "category": "InvalidAttribute",
+        "lineNumber": 12,
+        "element": "logger"
+    },
+\end{Verbatim}
+
+\subsection{Logging and Web Requests}
+For tracking how long certain requests take, it is common that teams will put a logger immediately before and immediately following an \verb|http-request| or database message processor to track the start/request time and the complete/response timestamp.
+
+Using mule-lint you can use a rule such as the following to ensure these are in place:
+
+\begin{Verbatim}[fontsize=\small]
+element 'http:request' hasPriorSibling logger
+element 'http:request' hasFollowingSibling logger
+\end{Verbatim}
+
+\subsection{Structured Logging - Planned Feature}
+Another item that is highly subjective is structured logging. Many teams log information in key value pairs, structured wording, or even a JSON format.
+
+The mule-lint app currently does not have any feature around checking the format of the log messages. This is a planned feature and we are working out the details on how that is going to look like with all the different combinations possible.
+
+%----------------------------------------------------------------------------------------
+%	SCHEDULE SECTION
+%----------------------------------------------------------------------------------------
+
+\section{Web Requests - Until Successful}
+
+Making an outside web request is a common function of Mule applications (microservices, API-Led, etc..). A common practice is to wrap an \verb|until-successful| around an \verb|http-request|.
+
+This is handled by using the \verb|hasParent| rule. This is the current extend of the check we have in place now. Some planned features are around ensuring certain elements of until-successful are matched as well (i.e. retryCount, wait time, synchronous ..etc).
+
+\begin{Verbatim}[fontsize=\small]
+element 'http-request' hasParent 'until-successful'
+\end{Verbatim}
+
+\begin{Verbatim}[fontsize=\small]
+"file": "/path/to/file/acme/mule-project/src/main/app/muleFlow.xml",
+"messages": [
+    {
+        "message": "Element http:request does not have a parent of until-successful",
+        "category": "InvalidParent",
+        "lineNumber": 77,
+        "element": "http:request"
+    }
+],
+\end{Verbatim}
+
+%----------------------------------------------------------------------------------------
+%	ANALYTICS SECTION
+%----------------------------------------------------------------------------------------
+
+\section{Analytics}
+
+There are some information items that are reported to help see better how flows are broken up into better named file names. A common issue is for a file to grow large holding many if not all flows.
+
+These numbers are reported as information at the end of each filename processed. These will allow to track trending information in future releases or using an information radiator.
+
+\begin{Verbatim}[fontsize=\small]
+"aggregations": {
+  "loggerCount": 9,
+  "flowCount": 4
+}
+\end{Verbatim}
+
+\end{document}
